@@ -47,6 +47,7 @@ void criar_hash(){
 
     char c;
     FILE* index = fopen("hash.bin","a+b");
+    rewind(index);
     if ((fread(&c,sizeof(char),1,index))==0) {
         fwrite(indice, sizeof(indice),1,index);
     }
