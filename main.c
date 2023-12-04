@@ -31,6 +31,7 @@ typedef struct {
 //quant de registros no arquivo de dados
 int tam_database() {
     FILE* database = fopen("database.bin","a+b");
+    fseek(database,0,SEEK_END);
     int retorno = ftell(database)/sizeof(DADO);
     fclose(database);
     return retorno;
@@ -120,20 +121,42 @@ int converter_chave(CHAVE* chave) {
     strcpy(res,chave->codC);
     strcat(res,chave->codV);
     int numero = atoi(res);
-    return numero%13;
+    return numero%TAM_INSERCAO;
 }
 
 //insere o indice no Hash, seguindo o Overflow Progressivo, sem buckets
 void inserir_chave(CHAVE* chave) {
-    INDICE indice = {chave->codC, chave->codV,tam_database()};
-    FILE* index = fopen("hash.bin","a+b");
-    rewind(index);
+    INDICE indice;
+    strcpy(indice.chave.codC,chave->codC);
+    strcpy(indice.chave.codV,chave->codV);
+    indice.endereco=tam_database();
 
+    INDICE aux;
+    int cont=0;
 
+    FILE* index = fopen("hash.bin","r+b");
 
+    printf("\n Endereco: %d\n",converter_chave(chave));
+    for (int i = converter_chave(chave); true;) {
 
-
-
+        fseek(index,(i*sizeof(INDICE)),SEEK_SET);
+        fread(&aux,sizeof(INDICE),1,index);
+        
+        if (aux.endereco == -1) {
+            fseek(index,(i*sizeof(INDICE)),SEEK_SET);
+            fwrite(&indice,sizeof(INDICE),1,index);
+            printf("\n Chave Inserida no Endereco: %d\n",i);
+            break;
+        } else {
+            printf("\n  Colisao\n");
+            i++;
+            if (i==TAM_INSERCAO)
+                i=0;
+            printf("\n  Tentativa: %d -> %d\n",++cont,i);
+        }
+        if (i==converter_chave(chave))
+            break;
+    }
     fclose(index);
 }
 
@@ -141,17 +164,27 @@ void inserir_chave(CHAVE* chave) {
 //se existir, o addr sera a posicao real no arquivo
 int pesquisar_chave(CHAVE* chave) {
 
-    int pos_estimada = converter_chave(chave);
+    INDICE indice;
     int addr=TAM_INSERCAO;
     int acessos=0;
 
     FILE* index = fopen("hash.bin","a+b");
     
-    fseek(index, sizeof(INDICE)*pos_estimada,SEEK_SET);
-
-
-
-
+    for (int i = converter_chave(chave);;) {
+        fseek(index, sizeof(INDICE)*i,SEEK_SET);
+        fread(&indice,sizeof(INDICE),1,index);
+        if ((strcmp(chave->codC,indice.chave.codC)==0) && (strcmp(chave->codV,indice.chave.codV)==0)) {
+            addr=i;
+            acessos++;
+            break;
+        }
+        acessos++;
+        i++;
+        if (i==TAM_INSERCAO)
+            i=0;
+        if (i==converter_chave(chave))
+            break;
+    }
     fclose(index);
     return criar_retorno(addr, acessos);
 }
@@ -159,7 +192,9 @@ int pesquisar_chave(CHAVE* chave) {
 //realiza a verificacao e insercao do dado e, juntamente, sua chave
 void insercao(DADO* dado) {
 
-    CHAVE chave = {dado->codC, dado->codV};
+    CHAVE chave;
+    strcpy(chave.codC,dado->codC);
+    strcpy(chave.codV,dado->codV);
 
     if (pesquisar_chave(&chave)/100==TAM_INSERCAO){
         inserir_chave(&chave);
@@ -187,12 +222,12 @@ int main() {
         scanf(" %d",&opcao);
         switch (opcao) {
             case 1:
-                printf("\nQual dado deseja inserir? (1-%d)",TAM_INSERCAO);
+                printf("\nQual dado deseja inserir? (1-%d)\n",TAM_INSERCAO);
                 scanf(" %d",&escolha_insercao);
                 insercao(&pasta[escolha_insercao-1]);
                 break;
             case 2:
-                printf("\nQual chave deseja buscar? (1-%d)", TAM_BUSCA);
+                printf("\nQual chave deseja buscar? (1-%d)\n", TAM_BUSCA);
                 scanf(" %d",&escolha_busca);
                 compactado = pesquisar_chave(&chave[escolha_busca-1]);
                 if (compactado/100==TAM_INSERCAO) {
@@ -207,6 +242,11 @@ int main() {
                 break;
             case 4:
                 exit(0);
+            case 5:
+                for(int i = 0; i<TAM_INSERCAO; i++) {
+                    imprimir_registro(&pasta[i]);
+                }
+                break;
             default:
                 printf("\n   [Alerta: Valor Invalido]\n");
         }
