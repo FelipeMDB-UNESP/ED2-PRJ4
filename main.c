@@ -7,6 +7,9 @@
 #include <string.h>
 #include <ctype.h>
 
+#define ARQ_INSERCAO "insere.bin"
+#define ARQ_BUSCA "busca.bin"
+
 #define TAM_INSERCAO 13
 #define TAM_BUSCA 5
 #define TAM_HASH 13
@@ -58,7 +61,7 @@ void criar_hash(){
 
 //extrai os dados do arquivo binario insere.bin
 void carregar_dados(DADO* buffer) {
-    FILE* insere = fopen("insere.bin","r");
+    FILE* insere = fopen(ARQ_INSERCAO,"r");
     if (insere != NULL)
         fread(buffer,sizeof(DADO),TAM_INSERCAO,insere);
     fclose(insere);
@@ -66,7 +69,7 @@ void carregar_dados(DADO* buffer) {
 
 //extrai os dados do arquivo binario busca.bin
 void carregar_buscas(CHAVE* buffer) {
-    FILE* busca = fopen("busca.bin","r");
+    FILE* busca = fopen(ARQ_BUSCA,"r");
     if (busca != NULL)
         fread(buffer,sizeof(CHAVE),TAM_BUSCA,busca);
     fclose(busca);
