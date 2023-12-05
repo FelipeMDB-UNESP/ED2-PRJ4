@@ -7,8 +7,9 @@
 #include <string.h>
 #include <ctype.h>
 
-#define TAM_INSERCAO 8
+#define TAM_INSERCAO 13
 #define TAM_BUSCA 5
+#define TAM_HASH 13
 
 typedef struct {
     char codC[3];
@@ -39,8 +40,8 @@ int tam_database() {
 
 //inicializa o hash e, se nao houver, cria
 void criar_hash(){
-    INDICE indice[TAM_INSERCAO];
-    for (int i=0; i<TAM_INSERCAO;i++) {
+    INDICE indice[TAM_HASH];
+    for (int i=0; i<TAM_HASH;i++) {
         strcpy(indice[i].chave.codC,"##");
         strcpy(indice[i].chave.codV,"##");
         indice[i].endereco=-1;
@@ -121,7 +122,7 @@ int converter_chave(CHAVE* chave) {
     strcpy(res,chave->codC);
     strcat(res,chave->codV);
     int numero = atoi(res);
-    return numero%TAM_INSERCAO;
+    return numero%TAM_HASH;
 }
 
 //insere o indice no Hash, seguindo o Overflow Progressivo, sem buckets
@@ -150,22 +151,24 @@ void inserir_chave(CHAVE* chave) {
         } else {
             printf("\n  Colisao\n");
             i++;
-            if (i==TAM_INSERCAO)
+            if (i==TAM_HASH)
                 i=0;
             printf("\n  Tentativa: %d -> %d\n",++cont,i);
         }
-        if (i==converter_chave(chave))
+        if (i==converter_chave(chave)) {
+            printf("\n  Hash cheio!\n");
             break;
+        }
     }
     fclose(index);
 }
 
-//procura pela chave no arquivo de hash; se nao existir, o addr vai ser TAM_INSERCAO,
+//procura pela chave no arquivo de hash; se nao existir, o addr vai ser TAM_HASH,
 //se existir, o addr sera a posicao real no arquivo
 int pesquisar_chave(CHAVE* chave) {
 
     INDICE indice;
-    int addr=TAM_INSERCAO;
+    int addr=TAM_HASH;
     int acessos=0;
 
     FILE* index = fopen("hash.bin","a+b");
@@ -180,7 +183,7 @@ int pesquisar_chave(CHAVE* chave) {
         }
         acessos++;
         i++;
-        if (i==TAM_INSERCAO)
+        if (i==TAM_HASH)
             i=0;
         if (i==converter_chave(chave))
             break;
@@ -196,7 +199,7 @@ void insercao(DADO* dado) {
     strcpy(chave.codC,dado->codC);
     strcpy(chave.codV,dado->codV);
 
-    if (pesquisar_chave(&chave)/100==TAM_INSERCAO){
+    if (pesquisar_chave(&chave)/100==TAM_HASH){
         inserir_chave(&chave);
         inserir_registro(dado);
     } else {
@@ -230,7 +233,7 @@ int main() {
                 printf("\nQual chave deseja buscar? (1-%d)\n", TAM_BUSCA);
                 scanf(" %d",&escolha_busca);
                 compactado = pesquisar_chave(&chave[escolha_busca-1]);
-                if (compactado/100==TAM_INSERCAO) {
+                if (compactado/100==TAM_HASH) {
                     printf("Chave nao encontrada: h(x): %d | acessos: %d", converter_chave(&chave[escolha_busca-1]), compactado%100);
                 } else {
                     printf("Chave encontrada: h(x): %d | addr: %d | acessos: %d", converter_chave(&chave[escolha_busca-1]),compactado/100,compactado%100);
