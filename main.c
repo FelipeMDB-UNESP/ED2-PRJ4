@@ -1,3 +1,9 @@
+//Estruturas de Dados II - Prj4-A9-Hash
+//André Luis Dias Nogueira
+//Felipe Melchior de Britto
+//Rafael Daiki Kaneko
+//Ryan Hideki Tadeo Guimarães
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
